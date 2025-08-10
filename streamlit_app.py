@@ -1,32 +1,15 @@
 import streamlit as st
 import pandas as pd
 import json
+import os
+import pdfplumber
+import re
 
 # Branding
-st.set_page_config(page_title="TrialMatch AI!", page_icon="🧬")
+st.set_page_config(page_title="TrialMatch AI", page_icon="🧬")
 
-st.title("Welcome to TrialMatch AI")
+st.title("Welcome to TrialMatch AI!")
 st.write("Your AI-powered clinical trial matching platform for NSCLC patients.")
-
-# About / Explanation expandable section
-with st.expander("About TrialMatch AI - What is this demo?"):
-    st.markdown("""
-    This app demonstrates **TrialMatch AI**, a clinical trial matching platform designed for Non-Small Cell Lung Cancer (NSCLC) patients.
-    
-    **Data:**  
-    - 200 synthetic NSCLC patients with realistic attributes like age, stage, mutation status, and performance status.  
-    - 5 clinical trial criteria JSONs covering different mutation types and stages.
-    
-    **How matching works:**  
-    Patients are matched against trial criteria based on stage, mutation status, and performance status.  
-    This demo shows which trials a selected patient qualifies for and explains why,  
-    and also which patients qualify for a selected trial.
-    
-    **How to use:**  
-    Use the tabs to switch between:  
-    - Patient-centric matching: pick a patient, see matches  
-    - Trial-centric matching: pick a trial, see matched patients  
-    """)
 
 @st.cache_data
 def load_data():
@@ -44,6 +27,31 @@ def load_trials():
             st.error(f"Trial file {trial_file} not found.")
     return trials
 
+def extract_criteria_from_pdf(pdf_path):
+    inclusion = []
+    exclusion = []
+
+    with pdfplumber.open(pdf_path) as pdf:
+        full_text = ""
+        for page in pdf.pages:
+            page_text = page.extract_text()
+            if page_text:
+                full_text += page_text + "\n"
+
+    # Regex to find inclusion/exclusion sections (case-insensitive)
+    inclusion_match = re.search(r'Inclusion Criteria(.*?)(Exclusion Criteria|$)', full_text, re.DOTALL | re.IGNORECASE)
+    exclusion_match = re.search(r'Exclusion Criteria(.*?)(Inclusion Criteria|$)', full_text, re.DOTALL | re.IGNORECASE)
+
+    if inclusion_match:
+        inclusion_text = inclusion_match.group(1).strip()
+        inclusion = [line.strip('-• \n') for line in inclusion_text.split('\n') if line.strip()]
+
+    if exclusion_match:
+        exclusion_text = exclusion_match.group(1).strip()
+        exclusion = [line.strip('-• \n') for line in exclusion_text.split('\n') if line.strip()]
+
+    return inclusion, exclusion
+
 patients = load_data()
 trials = load_trials()
 
@@ -54,99 +62,101 @@ mutation_counts = patients['mutation_status'].value_counts()
 st.markdown("**Mutation Status Distribution:**")
 st.bar_chart(mutation_counts)
 
+# Simple matching logic with explanation
 def match_patient_to_trial(patient, trial_criteria):
     reasons = []
-    match = True
-    
+
     # Stage check
-    if "stage" in trial_criteria:
-        if patient["stage"] not in trial_criteria["stage"]:
-            match = False
-            reasons.append(f"Stage '{patient['stage']}' not in trial eligible stages {trial_criteria['stage']}.")
-        else:
-            reasons.append(f"Stage '{patient['stage']}' matches trial eligible stages.")
+    if "stage" in trial_criteria and patient["stage"] not in trial_criteria["stage"]:
+        reasons.append(f"Stage {patient['stage']} not in allowed stages {trial_criteria['stage']}")
     
     # Mutation check
     mutation_required = trial_criteria.get("mutation_required", None)
     if mutation_required:
         if isinstance(mutation_required, list):
             if patient["mutation_status"] not in mutation_required:
-                match = False
-                reasons.append(f"Mutation status '{patient['mutation_status']}' not in required {mutation_required}.")
-            else:
-                reasons.append(f"Mutation status '{patient['mutation_status']}' matches required mutations.")
+                reasons.append(f"Mutation {patient['mutation_status']} not in required {mutation_required}")
         else:
             if patient["mutation_status"] != mutation_required:
-                match = False
-                reasons.append(f"Mutation status '{patient['mutation_status']}' does not match required '{mutation_required}'.")
-            else:
-                reasons.append(f"Mutation status '{patient['mutation_status']}' matches required '{mutation_required}'.")
-    
+                reasons.append(f"Mutation {patient['mutation_status']} does not match required {mutation_required}")
+
     # Performance status check
-    max_perf = trial_criteria.get("performance_status_max", 2)
-    if patient["performance_status"] > max_perf:
-        match = False
-        reasons.append(f"Performance status {patient['performance_status']} exceeds max allowed {max_perf}.")
-    else:
-        reasons.append(f"Performance status {patient['performance_status']} is within allowed max {max_perf}.")
-    
-    return match, reasons
+    if patient["performance_status"] > trial_criteria.get("performance_status_max", 2):
+        reasons.append(f"Performance status {patient['performance_status']} exceeds max allowed {trial_criteria.get('performance_status_max', 2)}")
 
-# Tabs for hybrid view
-tab1, tab2 = st.tabs(["Patient View", "Trial View"])
+    is_match = len(reasons) == 0
+    return is_match, reasons
 
-with tab1:
-    st.header("Patient-Centric Matching")
-    selected_patient = st.selectbox("Select a Patient ID", patients["patient_id"])
-    if selected_patient:
-        patient_row = patients[patients["patient_id"] == selected_patient].iloc[0]
-        st.write("### Patient Info")
-        st.write(patient_row)
-        
-        st.write("### Matching Trials and Explanation")
-        found_any = False
-        for trial_file, trial in trials.items():
-            match, reasons = match_patient_to_trial(patient_row, trial["criteria"])
-            if match:
-                found_any = True
-                st.success(f"Match found: **{trial['title']}**")
-            else:
-                st.warning(f"No match: **{trial['title']}**")
-            
-            with st.expander(f"Why {'match' if match else 'no match'}?"):
-                for r in reasons:
-                    st.write(f"- {r}")
-        
-        if not found_any:
-            st.info("No matching trials found for this patient.")
+st.header("Patient-Trial Matches")
 
-with tab2:
-    st.header("Trial-Centric Matching")
-    trial_titles = {trial_file: trial["title"] for trial_file, trial in trials.items()}
-    selected_trial_file = st.selectbox("Select a Trial", list(trial_titles.keys()), format_func=lambda x: trial_titles[x])
-    if selected_trial_file:
-        trial = trials[selected_trial_file]
-        st.write("### Trial Criteria (JSON)")
-        st.json(trial["criteria"])
-        
-        st.write("### Matched Patients")
-        matched_patients = []
-        for _, patient_row in patients.iterrows():
-            match, reasons = match_patient_to_trial(patient_row, trial["criteria"])
-            if match:
-                matched_patients.append((patient_row["patient_id"], patient_row, reasons))
-        
-        if matched_patients:
-            for pid, patient_row, reasons in matched_patients:
-                st.success(f"Patient ID: {pid}")
-                st.write(patient_row)
-                with st.expander("Why match?"):
-                    for r in reasons:
-                        st.write(f"- {r}")
+selected_patient = st.selectbox("Select a Patient ID", patients["patient_id"])
+
+if selected_patient:
+    patient_row = patients[patients["patient_id"] == selected_patient].iloc[0]
+    st.write("### Patient Info")
+    st.write(patient_row)
+
+    st.write("### Matching Trials")
+    matched_trials = []
+    for trial_file, trial in trials.items():
+        is_match, reasons = match_patient_to_trial(patient_row, trial["criteria"])
+        if is_match:
+            st.success(f"Match found: {trial['title']}")
         else:
-            st.warning("No patients matched this trial.")
+            st.info(f"Trial '{trial['title']}' - No match")
+            st.write("Reasons:")
+            for r in reasons:
+                st.write(f"- {r}")
+
+# Trial-centric view
+st.header("Trial-Centric Patient Matches")
+
+selected_trial_file = st.selectbox("Select a Trial JSON", list(trials.keys()))
+if selected_trial_file:
+    trial = trials[selected_trial_file]
+    st.write(f"### Trial: {trial['title']}")
+    st.write("#### Criteria:")
+    st.json(trial["criteria"])
+
+    st.write("#### Matching Patients:")
+    matched = []
+    for _, patient in patients.iterrows():
+        is_match, reasons = match_patient_to_trial(patient, trial["criteria"])
+        if is_match:
+            matched.append((patient["patient_id"], reasons))
+
+    if matched:
+        for pid, reasons in matched:
+            st.success(f"Patient {pid} matches")
+    else:
+        st.warning("No matching patients found.")
+
+# PDF uploader and parser
+st.write("**PDF Uploader should appear below:**")
+st.header("Upload Trial PDF to Extract Criteria")
+
+uploaded_file = st.file_uploader("Upload a trial PDF", type=["pdf"])
+
+if uploaded_file:
+    with open("temp_trial.pdf", "wb") as f:
+        f.write(uploaded_file.getbuffer())
+
+    inclusion, exclusion = extract_criteria_from_pdf("temp_trial.pdf")
+
+    st.subheader("Inclusion Criteria")
+    if inclusion:
+        for i, crit in enumerate(inclusion, 1):
+            st.write(f"{i}. {crit}")
+    else:
+        st.write("No inclusion criteria found.")
+
+    st.subheader("Exclusion Criteria")
+    if exclusion:
+        for i, crit in enumerate(exclusion, 1):
+            st.write(f"{i}. {crit}")
+    else:
+        st.write("No exclusion criteria found.")
 
 st.write("---")
 st.caption("Powered by TrialMatch AI")
-
 
