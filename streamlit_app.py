@@ -82,8 +82,6 @@ ax.set_ylabel("Number of Patients")
 ax.set_title("Mutation Status Distribution")
 st.pyplot(fig)
 
-r">{match_rate}%</div></div>', unsafe_allow_html=True)
-
 # -------------------------------
 # Matching Logic
 # -------------------------------
