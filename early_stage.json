@@ -1,0 +1,12 @@
+{
+    "trial_id": "T1005",
+    "title": "Early Stage NSCLC Trial",
+    "criteria": {
+        "stage": [
+            "I",
+            "II"
+        ],
+        "performance_status_max": 2
+    },
+    "description": "Trial for early stage NSCLC patients."
+}

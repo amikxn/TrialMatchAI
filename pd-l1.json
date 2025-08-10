@@ -1,0 +1,13 @@
+{
+    "trial_id": "T1002",
+    "title": "PD-L1 High Expression NSCLC Trial",
+    "criteria": {
+        "mutation_required": "PD-L1 High",
+        "stage": [
+            "III",
+            "IV"
+        ],
+        "performance_status_max": 2
+    },
+    "description": "Trial targeting NSCLC patients with high PD-L1 expression."
+}

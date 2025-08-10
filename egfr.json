@@ -1,0 +1,14 @@
+{
+    "trial_id": "T1001",
+    "title": "EGFR Mutation Positive NSCLC Trial",
+    "criteria": {
+        "mutation_required": "EGFR+",
+        "stage": [
+            "II",
+            "III",
+            "IV"
+        ],
+        "performance_status_max": 1
+    },
+    "description": "Trial for patients with EGFR mutation positive NSCLC."
+}

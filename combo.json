@@ -1,0 +1,16 @@
+{
+    "trial_id": "T1004",
+    "title": "Combination Therapy NSCLC Trial",
+    "criteria": {
+        "mutation_required": [
+            "EGFR+",
+            "PD-L1 High"
+        ],
+        "stage": [
+            "III",
+            "IV"
+        ],
+        "performance_status_max": 1
+    },
+    "description": "Trial for NSCLC patients eligible for combination targeted therapies."
+}

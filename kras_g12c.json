@@ -1,0 +1,12 @@
+{
+    "trial_id": "T1003",
+    "title": "KRAS G12C Mutation NSCLC Trial",
+    "criteria": {
+        "mutation_required": "KRAS G12C+",
+        "stage": [
+            "IV"
+        ],
+        "performance_status_max": 1
+    },
+    "description": "Trial for advanced NSCLC patients with KRAS G12C mutation."
+}

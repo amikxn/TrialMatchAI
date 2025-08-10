@@ -1,0 +1,201 @@
+patient_id,age,gender,stage,mutation_status,smoker,performance_status
+P1000,60,Female,III,KRAS G12C+,True,1
+P1001,45,Female,IV,None,True,2
+P1002,56,Male,II,None,False,0
+P1003,44,Male,IV,EGFR+,True,0
+P1004,78,Male,III,KRAS G12C+,False,0
+P1005,55,Female,III,KRAS G12C+,True,1
+P1006,47,Female,II,None,False,2
+P1007,56,Female,IV,KRAS G12C+,True,1
+P1008,85,Female,IV,KRAS G12C+,False,1
+P1009,83,Male,IV,None,True,2
+P1010,48,Female,IV,EGFR+,False,2
+P1011,85,Female,IV,EGFR+,False,2
+P1012,66,Male,I,KRAS G12C+,False,2
+P1013,48,Female,IV,None,False,2
+P1014,51,Male,III,PD-L1 High,True,2
+P1015,63,Female,III,PD-L1 High,False,2
+P1016,42,Male,IV,EGFR+,False,0
+P1017,45,Female,I,PD-L1 High,True,2
+P1018,72,Female,II,EGFR+,True,2
+P1019,65,Male,IV,EGFR+,True,2
+P1020,52,Male,IV,KRAS G12C+,False,2
+P1021,42,Female,III,KRAS G12C+,False,1
+P1022,49,Male,II,PD-L1 High,False,0
+P1023,76,Female,I,EGFR+,True,0
+P1024,72,Female,I,None,True,1
+P1025,81,Female,III,PD-L1 High,True,2
+P1026,69,Male,IV,KRAS G12C+,False,0
+P1027,57,Female,II,KRAS G12C+,False,0
+P1028,61,Male,III,EGFR+,False,0
+P1029,44,Male,II,None,True,2
+P1030,52,Female,IV,EGFR+,False,1
+P1031,42,Male,II,PD-L1 High,False,1
+P1032,71,Female,III,EGFR+,False,2
+P1033,65,Female,IV,PD-L1 High,True,1
+P1034,78,Female,III,KRAS G12C+,True,1
+P1035,69,Male,III,None,False,2
+P1036,68,Female,IV,KRAS G12C+,True,0
+P1037,80,Female,IV,EGFR+,True,2
+P1038,47,Female,I,PD-L1 High,True,0
+P1039,50,Female,IV,KRAS G12C+,True,0
+P1040,70,Female,IV,EGFR+,True,1
+P1041,68,Male,IV,KRAS G12C+,True,2
+P1042,84,Female,II,EGFR+,True,1
+P1043,70,Male,I,EGFR+,True,0
+P1044,59,Male,II,None,True,0
+P1045,78,Female,IV,PD-L1 High,True,1
+P1046,40,Male,IV,PD-L1 High,True,2
+P1047,61,Male,IV,PD-L1 High,False,1
+P1048,48,Male,IV,KRAS G12C+,True,0
+P1049,69,Female,IV,None,True,2
+P1050,63,Male,I,EGFR+,False,1
+P1051,70,Female,I,KRAS G12C+,False,0
+P1052,71,Male,II,PD-L1 High,False,1
+P1053,74,Male,I,None,False,2
+P1054,50,Male,I,EGFR+,False,0
+P1055,61,Male,IV,EGFR+,True,0
+P1056,61,Male,III,PD-L1 High,False,2
+P1057,76,Male,II,EGFR+,False,2
+P1058,64,Female,II,KRAS G12C+,False,0
+P1059,46,Female,II,PD-L1 High,True,2
+P1060,56,Male,I,KRAS G12C+,False,2
+P1061,48,Male,II,EGFR+,False,2
+P1062,76,Male,III,None,False,0
+P1063,82,Male,III,EGFR+,True,1
+P1064,74,Male,II,KRAS G12C+,False,0
+P1065,78,Male,I,EGFR+,False,0
+P1066,69,Female,IV,None,False,1
+P1067,68,Male,I,PD-L1 High,True,1
+P1068,69,Female,II,PD-L1 High,True,1
+P1069,55,Male,I,EGFR+,False,0
+P1070,62,Female,IV,None,True,2
+P1071,54,Male,IV,PD-L1 High,False,1
+P1072,78,Male,III,None,False,1
+P1073,59,Female,III,PD-L1 High,True,0
+P1074,51,Male,II,None,False,1
+P1075,69,Female,II,PD-L1 High,False,2
+P1076,41,Female,II,KRAS G12C+,False,2
+P1077,76,Female,II,EGFR+,False,0
+P1078,70,Male,II,KRAS G12C+,True,0
+P1079,59,Female,IV,KRAS G12C+,True,0
+P1080,62,Male,I,None,True,0
+P1081,46,Female,II,KRAS G12C+,True,2
+P1082,55,Male,I,None,False,2
+P1083,72,Male,IV,PD-L1 High,True,0
+P1084,58,Female,IV,EGFR+,True,0
+P1085,64,Female,IV,KRAS G12C+,False,2
+P1086,58,Male,IV,KRAS G12C+,True,0
+P1087,54,Female,II,None,True,1
+P1088,41,Male,II,EGFR+,True,2
+P1089,48,Male,II,PD-L1 High,True,1
+P1090,69,Male,I,PD-L1 High,True,0
+P1091,53,Female,II,PD-L1 High,True,1
+P1092,55,Male,II,KRAS G12C+,True,2
+P1093,78,Male,III,PD-L1 High,False,1
+P1094,81,Female,II,KRAS G12C+,True,2
+P1095,81,Male,II,KRAS G12C+,True,0
+P1096,57,Female,I,KRAS G12C+,True,0
+P1097,77,Female,II,PD-L1 High,True,1
+P1098,54,Female,II,None,False,2
+P1099,63,Male,II,EGFR+,True,0
+P1100,81,Female,III,KRAS G12C+,False,0
+P1101,76,Female,III,None,False,0
+P1102,56,Female,I,None,True,0
+P1103,60,Male,III,EGFR+,False,0
+P1104,40,Male,III,KRAS G12C+,False,1
+P1105,58,Female,III,PD-L1 High,True,0
+P1106,60,Female,I,KRAS G12C+,False,2
+P1107,61,Male,III,PD-L1 High,True,0
+P1108,80,Female,I,KRAS G12C+,True,0
+P1109,59,Female,II,EGFR+,False,1
+P1110,73,Female,II,EGFR+,True,2
+P1111,56,Female,III,KRAS G12C+,False,0
+P1112,45,Male,I,None,True,1
+P1113,44,Male,II,PD-L1 High,True,2
+P1114,45,Male,I,PD-L1 High,False,2
+P1115,69,Female,IV,EGFR+,False,1
+P1116,52,Female,IV,None,True,1
+P1117,68,Male,IV,None,False,1
+P1118,81,Female,III,EGFR+,True,1
+P1119,41,Male,III,PD-L1 High,True,2
+P1120,64,Female,IV,PD-L1 High,False,2
+P1121,40,Male,I,None,False,0
+P1122,54,Female,III,None,True,0
+P1123,61,Female,III,KRAS G12C+,True,0
+P1124,59,Female,III,PD-L1 High,False,2
+P1125,47,Male,I,EGFR+,True,0
+P1126,69,Male,IV,None,False,2
+P1127,50,Male,I,None,False,1
+P1128,50,Male,II,None,True,0
+P1129,42,Female,II,PD-L1 High,False,0
+P1130,65,Male,II,EGFR+,True,2
+P1131,53,Male,IV,PD-L1 High,False,0
+P1132,83,Female,II,PD-L1 High,True,1
+P1133,60,Female,I,KRAS G12C+,True,0
+P1134,58,Male,I,None,True,2
+P1135,66,Female,I,None,True,2
+P1136,51,Female,IV,KRAS G12C+,False,1
+P1137,61,Male,III,KRAS G12C+,False,1
+P1138,83,Female,II,PD-L1 High,True,1
+P1139,54,Female,IV,KRAS G12C+,True,0
+P1140,50,Male,II,None,False,1
+P1141,68,Female,III,PD-L1 High,True,0
+P1142,41,Female,I,EGFR+,False,1
+P1143,57,Male,III,KRAS G12C+,True,1
+P1144,59,Male,II,KRAS G12C+,False,1
+P1145,75,Male,III,PD-L1 High,True,1
+P1146,47,Male,I,PD-L1 High,True,2
+P1147,85,Female,III,KRAS G12C+,False,0
+P1148,69,Female,III,PD-L1 High,True,1
+P1149,76,Male,II,None,False,0
+P1150,52,Male,I,PD-L1 High,True,0
+P1151,69,Female,I,KRAS G12C+,True,0
+P1152,81,Female,IV,EGFR+,False,1
+P1153,50,Female,II,EGFR+,False,0
+P1154,70,Male,IV,EGFR+,False,0
+P1155,82,Female,IV,None,True,1
+P1156,62,Female,IV,EGFR+,False,2
+P1157,66,Male,I,PD-L1 High,True,0
+P1158,45,Female,I,PD-L1 High,False,0
+P1159,41,Male,I,EGFR+,False,1
+P1160,76,Male,III,PD-L1 High,True,1
+P1161,81,Female,II,None,True,0
+P1162,53,Female,I,EGFR+,True,1
+P1163,63,Female,II,None,True,1
+P1164,46,Male,I,None,True,1
+P1165,56,Male,I,None,True,1
+P1166,54,Male,IV,KRAS G12C+,True,2
+P1167,59,Male,II,EGFR+,True,2
+P1168,48,Male,II,EGFR+,True,0
+P1169,62,Male,IV,EGFR+,True,0
+P1170,83,Male,II,EGFR+,True,1
+P1171,78,Female,II,PD-L1 High,True,1
+P1172,47,Female,II,PD-L1 High,True,1
+P1173,50,Male,I,None,False,0
+P1174,40,Female,IV,EGFR+,False,2
+P1175,84,Male,II,KRAS G12C+,False,1
+P1176,68,Female,II,None,False,2
+P1177,78,Female,III,EGFR+,True,2
+P1178,63,Female,I,None,False,2
+P1179,46,Male,I,EGFR+,True,2
+P1180,62,Female,III,None,True,2
+P1181,50,Female,I,KRAS G12C+,True,2
+P1182,43,Female,III,PD-L1 High,False,1
+P1183,67,Female,I,KRAS G12C+,True,1
+P1184,77,Male,I,PD-L1 High,False,2
+P1185,45,Male,I,KRAS G12C+,True,1
+P1186,52,Female,II,EGFR+,True,0
+P1187,49,Female,IV,None,True,0
+P1188,40,Male,IV,None,False,1
+P1189,76,Male,II,EGFR+,False,1
+P1190,63,Female,I,EGFR+,True,1
+P1191,59,Female,I,PD-L1 High,False,1
+P1192,51,Male,II,None,True,2
+P1193,47,Female,IV,EGFR+,True,1
+P1194,52,Male,IV,KRAS G12C+,True,1
+P1195,82,Female,IV,PD-L1 High,True,1
+P1196,40,Male,IV,KRAS G12C+,False,0
+P1197,76,Male,IV,EGFR+,True,2
+P1198,44,Male,III,EGFR+,True,0
+P1199,64,Female,IV,KRAS G12C+,True,0
