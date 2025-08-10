@@ -132,7 +132,6 @@ if selected_trial_file:
         st.warning("No matching patients found.")
 
 # PDF uploader and parser
-st.write("**PDF Uploader should appear below:**")
 st.header("Upload Trial PDF to Extract Criteria")
 
 uploaded_file = st.file_uploader("Upload a trial PDF", type=["pdf"])
