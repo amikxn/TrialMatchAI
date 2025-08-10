@@ -62,11 +62,27 @@ trials = load_trials()
 # -------------------------------
 # Stat Cards
 # -------------------------------
+# -------------------------------
+# Stat Cards
+# -------------------------------
 col1, col2, col3 = st.columns(3)
 col1.markdown(f'<div class="stat-card"><div>Total Patients</div><div class="stat-number">{len(patients)}</div></div>', unsafe_allow_html=True)
 col2.markdown(f'<div class="stat-card"><div>Total Trials</div><div class="stat-number">{len(trials)}</div></div>', unsafe_allow_html=True)
 match_rate = 0  # can be calculated dynamically if desired
 col3.markdown(f'<div class="stat-card"><div>Match Rate</div><div class="stat-number">{match_rate}%</div></div>', unsafe_allow_html=True)
+
+# Add Mutation Status Distribution graph below stat cards
+mutation_counts = patients['mutation_status'].value_counts()
+
+st.subheader("Mutation Status Distribution:")
+fig, ax = plt.subplots()
+mutation_counts.plot(kind='bar', color='skyblue', ax=ax)
+ax.set_xlabel("Mutation Status")
+ax.set_ylabel("Number of Patients")
+ax.set_title("Mutation Status Distribution")
+st.pyplot(fig)
+
+r">{match_rate}%</div></div>', unsafe_allow_html=True)
 
 # -------------------------------
 # Matching Logic
