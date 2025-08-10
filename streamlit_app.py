@@ -3,6 +3,7 @@ import pandas as pd
 import json
 import os
 import pdfplumber
+import re  # Added for regex
 
 # -------------------------------
 # Branding & Page Config
@@ -16,21 +17,7 @@ TAGLINE = "Where advanced AI meets precision oncology — matching every NSCLC p
 st.markdown(f"""
     <style>
         .main {{ background-color: #f8f9fa; }}
-        .hero {{
-            background-color: {PRIMARY_COLOR};
-            padding: 2rem;
-            border-radius: 0.5rem;
-            text-align: center;
-        }}
-        .hero h1 {{
-            color: white;
-            margin-bottom: 0.5rem;
-        }}
-        .hero p {{
-            color: white;
-            font-size: 1.2rem;
-            margin: 0;
-        }}
+        /* Removed hero styling */
         .stat-card {{
             background-color: white;
             padding: 1rem;
@@ -46,13 +33,12 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# Hero Banner
+# Hero Banner without colored background or white text
 st.markdown(f"""
-<div class="hero">
-    <h1>TrialMatch AI</h1>
-    <p>{TAGLINE}</p>
-</div>
-""", unsafe_allow_html=True)
+# TrialMatch AI
+
+{TAGLINE}
+""")
 
 # -------------------------------
 # Load Data
@@ -122,25 +108,44 @@ def match_patient_to_trial(patient, trial_criteria):
     return is_match, reasons
 
 # -------------------------------
-# PDF Extraction
+# Improved PDF Extraction
 # -------------------------------
+def clean_text(text):
+    # Remove unwanted artifacts like (cid:24), (cid:20), etc.
+    cleaned = re.sub(r'\(cid:\d+\)', '', text)
+    # Replace multiple whitespaces/newlines with a single space
+    cleaned = re.sub(r'\s+', ' ', cleaned)
+    return cleaned.strip()
+
 def extract_criteria_from_pdf(pdf_path):
-    inclusion, exclusion = [], []
+    full_text = ""
     try:
         with pdfplumber.open(pdf_path) as pdf:
             for page in pdf.pages:
                 text = page.extract_text()
-                if not text:
-                    continue
-                for line in text.split("\n"):
-                    lower_line = line.lower()
-                    if "inclusion" in lower_line:
-                        inclusion.append(line.strip())
-                    elif "exclusion" in lower_line:
-                        exclusion.append(line.strip())
+                if text:
+                    full_text += text + "\n"
     except Exception as e:
         st.error(f"Error reading PDF: {e}")
-    return inclusion, exclusion
+        return [], []
+    
+    cleaned_text = clean_text(full_text)
+    
+    # Extract inclusion section (after 6.1 Inclusion Criteria, up to 6.2 Exclusion Criteria)
+    inclusion_pattern = r'6\.1 Inclusion Criteria(.*?)(6\.2 Exclusion Criteria|$)'
+    exclusion_pattern = r'6\.2 Exclusion Criteria(.*?)(Section \d+|$)'
+
+    inclusion_match = re.search(inclusion_pattern, cleaned_text, re.IGNORECASE | re.DOTALL)
+    exclusion_match = re.search(exclusion_pattern, cleaned_text, re.IGNORECASE | re.DOTALL)
+
+    inclusion_text = inclusion_match.group(1).strip() if inclusion_match else ""
+    exclusion_text = exclusion_match.group(1).strip() if exclusion_match else ""
+
+    # Split text into list items by periods, dashes, or newlines
+    inclusion_criteria = [crit.strip() for crit in re.split(r'\.|\n|-', inclusion_text) if crit.strip()]
+    exclusion_criteria = [crit.strip() for crit in re.split(r'\.|\n|-', exclusion_text) if crit.strip()]
+
+    return inclusion_criteria, exclusion_criteria
 
 # -------------------------------
 # Tabs
@@ -199,7 +204,10 @@ with tab3:
                 st.write(f"{i}. {crit}")
         else:
             st.write("No exclusion criteria found.")
+        
+        # Clean up temporary file
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
 st.write("---")
 st.caption("Powered by TrialMatch AI")
-
