@@ -3,7 +3,7 @@ import pandas as pd
 import json
 
 # Branding
-st.set_page_config(page_title="TrialMatch AI", page_icon="🧬")
+st.set_page_config(page_title="TrialMatch AI!", page_icon="🧬")
 
 st.title("Welcome to TrialMatch AI")
 st.write("Your AI-powered clinical trial matching platform for NSCLC patients.")
