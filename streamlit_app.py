@@ -1,20 +1,20 @@
 import streamlit as st
 import pandas as pd
 import json
-import os
 import pdfplumber
-import matplotlib.pyplot as plt
+import os
 import openai
+import matplotlib.pyplot as plt
 
-# -------------------------------
-# Page Config & Branding
-# -------------------------------
-st.set_page_config(page_title="TrialMatch AI", page_icon="🧬", layout="wide")
-TAGLINE = "Where advanced AI meets precision oncology — matching every NSCLC patient to the right trial."
+# Branding
+st.set_page_config(page_title="TrialMatch AI", page_icon="🧬")
 
-# -------------------------------
-# Load Data
-# -------------------------------
+st.title("Welcome to TrialMatch AI")
+st.write("Your AI-powered clinical trial matching platform for NSCLC patients.")
+
+# -----------------------------
+# Data Loading Functions
+# -----------------------------
 @st.cache_data
 def load_data():
     return pd.read_csv("sample_patients.csv")
@@ -23,56 +23,120 @@ def load_data():
 def load_trials():
     trials = {}
     for trial_file in ["egfr.json", "pd-l1.json", "kras_g12c.json", "combo.json", "early_stage.json"]:
-        if os.path.exists(trial_file):
+        try:
             with open(trial_file) as f:
                 trials[trial_file] = json.load(f)
+        except FileNotFoundError:
+            st.error(f"Trial file {trial_file} not found.")
     return trials
 
-patients = load_data()
-trials = load_trials()
-
-# -------------------------------
-# Matching Logic
-# -------------------------------
+# -----------------------------
+# Matching Logic with Explanation
+# -----------------------------
 def match_patient_to_trial(patient, trial_criteria):
     reasons = []
-    is_match = True
 
     # Stage check
     if "stage" in trial_criteria and patient["stage"] not in trial_criteria["stage"]:
-        is_match = False
-        reasons.append(f"Stage mismatch: patient is {patient['stage']}")
-    else:
-        reasons.append(f"Stage match: {patient['stage']}")
+        reasons.append(f"Patient stage {patient['stage']} not in allowed stages {trial_criteria['stage']}")
+        return False, reasons
 
     # Mutation check
-    mutation_required = trial_criteria.get("mutation_required")
+    mutation_required = trial_criteria.get("mutation_required", None)
     if mutation_required:
         if isinstance(mutation_required, list):
             if patient["mutation_status"] not in mutation_required:
-                is_match = False
-                reasons.append(f"Mutation mismatch: patient has {patient['mutation_status']}")
-            else:
-                reasons.append(f"Mutation match: {patient['mutation_status']}")
+                reasons.append(f"Mutation {patient['mutation_status']} not in required list {mutation_required}")
+                return False, reasons
         else:
             if patient["mutation_status"] != mutation_required:
-                is_match = False
-                reasons.append(f"Mutation mismatch: patient has {patient['mutation_status']}")
-            else:
-                reasons.append(f"Mutation match: {patient['mutation_status']}")
+                reasons.append(f"Mutation {patient['mutation_status']} does not match required {mutation_required}")
+                return False, reasons
 
     # Performance status check
     if patient["performance_status"] > trial_criteria.get("performance_status_max", 2):
-        is_match = False
-        reasons.append(f"Performance status too high: {patient['performance_status']}")
-    else:
-        reasons.append(f"Performance status acceptable: {patient['performance_status']}")
+        reasons.append(f"Performance status {patient['performance_status']} exceeds max {trial_criteria.get('performance_status_max', 2)}")
+        return False, reasons
 
-    return is_match, reasons
+    reasons.append("Meets all inclusion criteria")
+    return True, reasons
+
+# -----------------------------
+# PDF Parsing Function
+# -----------------------------
+def extract_criteria_from_pdf(pdf_path):
+    inclusion = []
+    exclusion = []
+    with pdfplumber.open(pdf_path) as pdf:
+        for page in pdf.pages:
+            text = page.extract_text()
+            if not text:
+                continue
+            lines = text.split("\n")
+            for line in lines:
+                low = line.lower()
+                if "inclusion" in low:
+                    inclusion.append(line.strip())
+                elif "exclusion" in low:
+                    exclusion.append(line.strip())
+    return inclusion, exclusion
+
+# -----------------------------
+# Load Data
+# -----------------------------
+patients = load_data()
+trials = load_trials()
+
+# -----------------------------
+# Top Stats
+# -----------------------------
+st.header("Top Stats")
+st.markdown(f"- Total Patients: **{len(patients)}**")
+
+mutation_counts = patients['mutation_status'].value_counts()
+st.bar_chart(mutation_counts)
 
 # -------------------------------
-# AI-Powered PDF Interpretation
+# Matching Logic (new, for consistency from Patient-Centric view below)
 # -------------------------------
+# (This part is replaced below, so not added here to avoid conflicts)
+
+# -------------------------------
+# Tabs
+# -------------------------------
+tab1, tab2, tab3 = st.tabs(["📋 Patient-Centric View", "🧪 Trial-Centric View", "📄 Upload Trial PDF"])
+
+# Patient-Centric View
+with tab1:
+    selected_patient = st.selectbox("Select a Patient ID", patients["patient_id"])
+    patient_row = patients[patients["patient_id"] == selected_patient].iloc[0]
+    st.subheader("Patient Info")
+    st.write(patient_row)
+
+    st.subheader("Matching Trials")
+    for trial_file, trial in trials.items():
+        # Using your original match_patient_to_trial function (from older code)
+        is_match, reasons = match_patient_to_trial(patient_row, trial["criteria"])
+        with st.expander(f"{'✅' if is_match else '❌'} {trial['title']}"):
+            for r in reasons:
+                st.write("- " + r)
+
+# Trial-Centric View
+with tab2:
+    selected_trial_file = st.selectbox("Select a Trial JSON", list(trials.keys()))
+    trial = trials[selected_trial_file]
+    st.subheader(f"Trial: {trial['title']}")
+    st.json(trial["criteria"])
+
+    st.subheader("Matching Patients")
+    for _, patient in patients.iterrows():
+        is_match, reasons = match_patient_to_trial(patient, trial["criteria"])
+        if is_match:
+            with st.expander(f"✅ Patient {patient['patient_id']}"):
+                for r in reasons:
+                    st.write("- " + r)
+
+# PDF Upload View (AI-powered)
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 def interpret_trial_criteria_llm(text):
@@ -108,65 +172,6 @@ def interpret_trial_criteria_llm(text):
 
     return structured
 
-# -------------------------------
-# Stat Cards + Graph
-# -------------------------------
-col1, col2, col3, col4 = st.columns([1, 1, 1, 2])
-
-col1.metric("Total Patients", len(patients))
-col2.metric("Total Trials", len(trials))
-match_rate = 0
-col3.metric("Match Rate", f"{match_rate}%")
-
-# Dark mode–friendly compact graph
-mutation_counts = patients['mutation_status'].value_counts()
-fig, ax = plt.subplots(figsize=(4, 2))
-mutation_counts.plot(kind='bar', color='lightgray', ax=ax)
-ax.set_facecolor('none')
-fig.patch.set_alpha(0)
-ax.set_xlabel("Mutation Status", color='white')
-ax.set_ylabel("Patients", color='white')
-ax.set_title("Mutation Status", fontsize=10, color='white')
-ax.tick_params(axis='x', labelrotation=45, labelsize=8, colors='white')
-ax.tick_params(axis='y', labelsize=8, colors='white')
-fig.tight_layout()
-col4.pyplot(fig)
-
-# -------------------------------
-# Tabs
-# -------------------------------
-tab1, tab2, tab3 = st.tabs(["📋 Patient-Centric View", "🧪 Trial-Centric View", "📄 Upload Trial PDF"])
-
-# Patient-Centric View
-with tab1:
-    selected_patient = st.selectbox("Select a Patient ID", patients["patient_id"])
-    patient_row = patients[patients["patient_id"] == selected_patient].iloc[0]
-    st.subheader("Patient Info")
-    st.write(patient_row)
-
-    st.subheader("Matching Trials")
-    for trial_file, trial in trials.items():
-        match, reasons = match_patient_to_trial(patient_row, trial["criteria"])
-        with st.expander(f"{'✅' if match else '❌'} {trial['title']}"):
-            for r in reasons:
-                st.write("- " + r)
-
-# Trial-Centric View
-with tab2:
-    selected_trial_file = st.selectbox("Select a Trial JSON", list(trials.keys()))
-    trial = trials[selected_trial_file]
-    st.subheader(f"Trial: {trial['title']}")
-    st.json(trial["criteria"])
-
-    st.subheader("Matching Patients")
-    for _, patient in patients.iterrows():
-        match, reasons = match_patient_to_trial(patient, trial["criteria"])
-        if match:
-            with st.expander(f"✅ Patient {patient['patient_id']}"):
-                for r in reasons:
-                    st.write("- " + r)
-
-# PDF Upload View (AI-powered)
 with tab3:
     st.subheader("Upload Trial PDF to Extract & Interpret Criteria (AI-powered)")
     uploaded_file = st.file_uploader("Upload a trial PDF", type=["pdf"])
