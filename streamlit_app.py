@@ -3,42 +3,14 @@ import pandas as pd
 import json
 import os
 import pdfplumber
-import re  # Added for regex
+import matplotlib.pyplot as plt
+import openai
 
 # -------------------------------
-# Branding & Page Config
+# Page Config & Branding
 # -------------------------------
 st.set_page_config(page_title="TrialMatch AI", page_icon="🧬", layout="wide")
-
-PRIMARY_COLOR = "#006e96"
 TAGLINE = "Where advanced AI meets precision oncology — matching every NSCLC patient to the right trial."
-
-# Custom CSS for branding
-st.markdown(f"""
-    <style>
-        .main {{ background-color: #f8f9fa; }}
-        /* Removed hero styling */
-        .stat-card {{
-            background-color: white;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }}
-        .stat-number {{
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: {PRIMARY_COLOR};
-        }}
-    </style>
-""", unsafe_allow_html=True)
-
-# Hero Banner without colored background or white text
-st.markdown(f"""
-# TrialMatch AI
-
-{TAGLINE}
-""")
 
 # -------------------------------
 # Load Data
@@ -58,35 +30,6 @@ def load_trials():
 
 patients = load_data()
 trials = load_trials()
-
-# -------------------------------
-# Stat Cards
-# -------------------------------
-# -------------------------------
-# Stat Cards
-# -------------------------------
-
-ol1, col2, col3 = st.columns(3)
-col1.markdown(f'<div class="stat-card"><div>Total Patients</div><div class="stat-number">{len(patients)}</div></div>', unsafe_allow_html=True)
-col2.markdown(f'<div class="stat-card"><div>Total Trials</div><div class="stat-number">{len(trials)}</div></div>', unsafe_allow_html=True)
-match_rate = 0  # can be calculated dynamically if desired
-col3.markdown(f'<div class="stat-card"><div>Match Rate</div><div class="stat-number">{match_rate}%</div></div>', unsafe_allow_html=True)
-col1, col2, col3 = st.columns(3)
-col1.markdown(f'<div class="stat-card"><div>Total Patients</div><div class="stat-number">{len(patients)}</div></div>', unsafe_allow_html=True)
-col2.markdown(f'<div class="stat-card"><div>Total Trials</div><div class="stat-number">{len(trials)}</div></div>', unsafe_allow_html=True)
-match_rate = 0  # can be calculated dynamically if desired
-col3.markdown(f'<div class="stat-card"><div>Match Rate</div><div class="stat-number">{match_rate}%</div></div>', unsafe_allow_html=True)
-
-# Add Mutation Status Distribution graph below stat cards
-mutation_counts = patients['mutation_status'].value_counts()
-
-st.subheader("Mutation Status Distribution:")
-fig, ax = plt.subplots()
-mutation_counts.plot(kind='bar', color='skyblue', ax=ax)
-ax.set_xlabel("Mutation Status")
-ax.set_ylabel("Number of Patients")
-ax.set_title("Mutation Status Distribution")
-st.pyplot(fig)
 
 # -------------------------------
 # Matching Logic
@@ -128,44 +71,66 @@ def match_patient_to_trial(patient, trial_criteria):
     return is_match, reasons
 
 # -------------------------------
-# Improved PDF Extraction
+# AI-Powered PDF Interpretation
 # -------------------------------
-def clean_text(text):
-    # Remove unwanted artifacts like (cid:24), (cid:20), etc.
-    cleaned = re.sub(r'\(cid:\d+\)', '', text)
-    # Replace multiple whitespaces/newlines with a single space
-    cleaned = re.sub(r'\s+', ' ', cleaned)
-    return cleaned.strip()
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-def extract_criteria_from_pdf(pdf_path):
-    full_text = ""
+def interpret_trial_criteria_llm(text):
+    prompt = f"""
+    You are a clinical trial document parser. Extract the following from the trial text below:
+    - Stage requirements (as list of strings, e.g. ["I", "IIIA"])
+    - Required mutations (as list, e.g. ["EGFR", "PD-L1"])
+    - Maximum allowed ECOG performance status (integer)
+    - Raw inclusion criteria (list of strings)
+    - Raw exclusion criteria (list of strings)
+
+    Only return a valid JSON object with the following keys:
+    stage, mutation_required, performance_status_max, raw_inclusion, raw_exclusion.
+
+    Trial text:
+    {text}
+    """
+
+    response = openai.ChatCompletion.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "system", "content": "You are a helpful clinical trial parser."},
+                  {"role": "user", "content": prompt}],
+        temperature=0
+    )
+
+    parsed = response["choices"][0]["message"]["content"]
+
     try:
-        with pdfplumber.open(pdf_path) as pdf:
-            for page in pdf.pages:
-                text = page.extract_text()
-                if text:
-                    full_text += text + "\n"
-    except Exception as e:
-        st.error(f"Error reading PDF: {e}")
-        return [], []
-    
-    cleaned_text = clean_text(full_text)
-    
-    # Extract inclusion section (after 6.1 Inclusion Criteria, up to 6.2 Exclusion Criteria)
-    inclusion_pattern = r'6\.1 Inclusion Criteria(.*?)(6\.2 Exclusion Criteria|$)'
-    exclusion_pattern = r'6\.2 Exclusion Criteria(.*?)(Section \d+|$)'
+        structured = json.loads(parsed)
+    except json.JSONDecodeError:
+        st.error("Failed to parse JSON from AI output.")
+        structured = {}
 
-    inclusion_match = re.search(inclusion_pattern, cleaned_text, re.IGNORECASE | re.DOTALL)
-    exclusion_match = re.search(exclusion_pattern, cleaned_text, re.IGNORECASE | re.DOTALL)
+    return structured
 
-    inclusion_text = inclusion_match.group(1).strip() if inclusion_match else ""
-    exclusion_text = exclusion_match.group(1).strip() if exclusion_match else ""
+# -------------------------------
+# Stat Cards + Graph
+# -------------------------------
+col1, col2, col3, col4 = st.columns([1, 1, 1, 2])
 
-    # Split text into list items by periods, dashes, or newlines
-    inclusion_criteria = [crit.strip() for crit in re.split(r'\.|\n|-', inclusion_text) if crit.strip()]
-    exclusion_criteria = [crit.strip() for crit in re.split(r'\.|\n|-', exclusion_text) if crit.strip()]
+col1.metric("Total Patients", len(patients))
+col2.metric("Total Trials", len(trials))
+match_rate = 0
+col3.metric("Match Rate", f"{match_rate}%")
 
-    return inclusion_criteria, exclusion_criteria
+# Dark mode–friendly compact graph
+mutation_counts = patients['mutation_status'].value_counts()
+fig, ax = plt.subplots(figsize=(4, 2))
+mutation_counts.plot(kind='bar', color='lightgray', ax=ax)
+ax.set_facecolor('none')
+fig.patch.set_alpha(0)
+ax.set_xlabel("Mutation Status", color='white')
+ax.set_ylabel("Patients", color='white')
+ax.set_title("Mutation Status", fontsize=10, color='white')
+ax.tick_params(axis='x', labelrotation=45, labelsize=8, colors='white')
+ax.tick_params(axis='y', labelsize=8, colors='white')
+fig.tight_layout()
+col4.pyplot(fig)
 
 # -------------------------------
 # Tabs
@@ -201,33 +166,28 @@ with tab2:
                 for r in reasons:
                     st.write("- " + r)
 
-# PDF Upload View
+# PDF Upload View (AI-powered)
 with tab3:
-    st.subheader("Upload Trial PDF to Extract Criteria")
+    st.subheader("Upload Trial PDF to Extract & Interpret Criteria (AI-powered)")
     uploaded_file = st.file_uploader("Upload a trial PDF", type=["pdf"])
     if uploaded_file:
         temp_path = "temp_trial.pdf"
         with open(temp_path, "wb") as f:
             f.write(uploaded_file.getbuffer())
-        inclusion, exclusion = extract_criteria_from_pdf(temp_path)
 
-        st.markdown("### Inclusion Criteria")
-        if inclusion:
-            for i, crit in enumerate(inclusion, 1):
-                st.write(f"{i}. {crit}")
-        else:
-            st.write("No inclusion criteria found.")
+        with pdfplumber.open(temp_path) as pdf:
+            all_text = "\n".join(page.extract_text() or "" for page in pdf.pages)
 
-        st.markdown("### Exclusion Criteria")
-        if exclusion:
-            for i, crit in enumerate(exclusion, 1):
-                st.write(f"{i}. {crit}")
-        else:
-            st.write("No exclusion criteria found.")
-        
-        # Clean up temporary file
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+        trial_criteria = interpret_trial_criteria_llm(all_text)
+
+        st.markdown("### Structured Criteria Extracted (AI)")
+        st.json(trial_criteria)
+
+        st.markdown("### Raw Inclusion Criteria")
+        st.write(trial_criteria.get("raw_inclusion", []))
+
+        st.markdown("### Raw Exclusion Criteria")
+        st.write(trial_criteria.get("raw_exclusion", []))
 
 st.write("---")
 st.caption("Powered by TrialMatch AI")
