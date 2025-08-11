@@ -97,11 +97,6 @@ mutation_counts = patients['mutation_status'].value_counts()
 st.bar_chart(mutation_counts)
 
 # -------------------------------
-# Matching Logic (new, for consistency from Patient-Centric view below)
-# -------------------------------
-# (This part is replaced below, so not added here to avoid conflicts)
-
-# -------------------------------
 # Tabs
 # -------------------------------
 tab1, tab2, tab3 = st.tabs(["📋 Patient-Centric View", "🧪 Trial-Centric View", "📄 Upload Trial PDF"])
@@ -109,17 +104,19 @@ tab1, tab2, tab3 = st.tabs(["📋 Patient-Centric View", "🧪 Trial-Centric Vie
 # Patient-Centric View
 with tab1:
     selected_patient = st.selectbox("Select a Patient ID", patients["patient_id"])
-    patient_row = patients[patients["patient_id"] == selected_patient].iloc[0]
-    st.subheader("Patient Info")
-    st.write(patient_row)
+    if selected_patient:
+        patient_row = patients[patients["patient_id"] == selected_patient].iloc[0]
+        st.subheader("Patient Info")
+        st.write(patient_row)
 
-    st.subheader("Matching Trials")
-    for trial_file, trial in trials.items():
-        # Using your original match_patient_to_trial function (from older code)
-        is_match, reasons = match_patient_to_trial(patient_row, trial["criteria"])
-        with st.expander(f"{'✅' if is_match else '❌'} {trial['title']}"):
-            for r in reasons:
-                st.write("- " + r)
+        st.subheader("Matching Trials")
+        for trial_file, trial in trials.items():
+            is_match, reasons = match_patient_to_trial(patient_row, trial["criteria"])
+            with st.expander(f"{'✅' if is_match else '❌'} {trial['title']}"):
+                for r in reasons:
+                    st.write("- " + r)
+    else:
+        st.warning("Please select a patient.")
 
 # Trial-Centric View
 with tab2:
@@ -129,12 +126,16 @@ with tab2:
     st.json(trial["criteria"])
 
     st.subheader("Matching Patients")
+    matched_any = False
     for _, patient in patients.iterrows():
         is_match, reasons = match_patient_to_trial(patient, trial["criteria"])
         if is_match:
+            matched_any = True
             with st.expander(f"✅ Patient {patient['patient_id']}"):
                 for r in reasons:
                     st.write("- " + r)
+    if not matched_any:
+        st.warning("No matching patients found.")
 
 # PDF Upload View (AI-powered)
 openai.api_key = st.secrets["OPENAI_API_KEY"]
@@ -183,7 +184,8 @@ with tab3:
         with pdfplumber.open(temp_path) as pdf:
             all_text = "\n".join(page.extract_text() or "" for page in pdf.pages)
 
-        trial_criteria = interpret_trial_criteria_llm(all_text)
+        with st.spinner("Interpreting trial criteria with AI..."):
+            trial_criteria = interpret_trial_criteria_llm(all_text)
 
         st.markdown("### Structured Criteria Extracted (AI)")
         st.json(trial_criteria)
@@ -193,6 +195,10 @@ with tab3:
 
         st.markdown("### Raw Exclusion Criteria")
         st.write(trial_criteria.get("raw_exclusion", []))
+
+        # Cleanup temporary file
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
 st.write("---")
 st.caption("Powered by TrialMatch AI")
